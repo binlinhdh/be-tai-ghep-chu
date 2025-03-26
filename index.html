@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghép Chữ Đúng</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background-color: #f0f0f0;
+            margin: 0;
+            transition: background-color 0.5s ease;
+        }
+        body.start-screen {
+            background-color: #f0f0f0;
+        }
+        body.playing-screen {
+            background-color: #e0f7fa;
+        }
+        body.game-over-screen {
+            background-color: #ffe082;
+        }
+        #game-container {
+            width: 80%;
+            max-width: 800px;
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            transition: background-color 0.5s ease;
+        }
+        #game-container.start-screen {
+            background-color: #fff;
+        }
+        #game-container.playing-screen {
+            background-color: #e0f7fa;
+        }
+        #game-container.game-over-screen {
+            background-color: #fff;
+        }
+        h1 {
+            font-size: 24px;
+            margin-bottom: 20px;
+            color: #333;
+        }
+        #word-display {
+            font-size: 36px;
+            margin-bottom: 20px;
+            letter-spacing: 10px;
+            font-weight: bold;
+            color: #2196f3;
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+        }
+        .letter-blank {
+            width: 40px;
+            height: 40px;
+            border: 3px solid #2196f3;
+            border-radius: 8px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            color: #2196f3;
+            background: rgba(33, 150, 243, 0.1);
+            transition: all 0.3s ease;
+        }
+        .letter-blank.filled {
+            background: #2196f3;
+            color: white;
+            transform: scale(1.1);
+            box-shadow: 0 4px 8px rgba(33, 150, 243, 0.3);
+        }
+        #letters-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+        .letter {
+            width: 50px;
+            height: 50px;
+            border-radius: 8px;
+            background-color: #ffc107;
+            color: #fff;
+            font-size: 24px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            position: relative;
+            margin: 0;
+        }
+        .letter:hover {
+            background-color: #ffeb3b;
+            transform: scale(1.1);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        .letter.selected {
+            background-color: #4caf50;
+            opacity: 0.7;
+            transform: scale(1.2);
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.2);
+        }
+        .letter.correct {
+            background-color: #4caf50;
+            opacity: 0;
+            transform: scale(1.2);
+            transition: opacity 0.5s ease, transform 0.5s ease;
+        }
+        .letter.flying {
+            position: fixed;
+            pointer-events: none;
+            z-index: 1000;
+            animation: flyToTarget 0.5s ease forwards;
+        }
+        @keyframes flyToTarget {
+            0% {
+                transform: scale(1) translate(0, 0);
+                opacity: 1;
+            }
+            50% {
+                transform: scale(1.2) translate(var(--tx), var(--ty));
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1) translate(var(--tx), var(--ty));
+                opacity: 0;
+            }
+        }
+        #message {
+            font-size: 24px;
+            color: #4caf50;
+            margin-bottom: 20px;
+            display: none;
+        }
+        #start-button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: #2196f3;
+            color: #fff;
+            font-size: 20px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            border: none;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        }
+        #start-button:hover {
+            background-color: #1976d2;
+            transform: scale(1.05);
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.3);
+        }
+        #score-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            font-size: 20px;
+            color: #333;
+        }
+        .game-over-overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.8);
+            z-index: 10;
+        }
+        .game-over-content {
+            background-color: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            font-size: 24px;
+            color: #333;
+        }
+        .play-again-button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            border-radius: 5px;
+            background-color: #2196f3;
+            color: #fff;
+            cursor: pointer;
+        }
+        .play-again-button:hover {
+            background-color: #1976d2;
+        }
+        #timer-display {
+            font-size: 20px;
+            color: #333;
+            margin-bottom: 10px;
+            padding: 10px;
+            border-radius: 10px;
+            background-color: #ff6f61;
+            color: #fff;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            animation: pulse 2s infinite;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+        @media screen and (max-width: 600px) {
+            #game-container {
+                width: 95%;
+            }
+            .letter {
+                width: 40px;
+                height: 40px;
+                font-size: 20px;
+            }
+            #word-display {
+                font-size: 24px;
+            }
+            #start-button {
+                font-size: 18px;
+            }
+        }
+    </style>
+</head>
+<body class="start-screen">
+    <div id="game-container" class="start-screen">
+        <h1>Ghép Chữ Đúng</h1>
+        <div id="word-display"></div>
+        <div id="letters-container"></div>
+        <div id="message">Giỏi lắm!</div>
+        <div id="timer-display">
+            <img src="https://unpkg.com/lucide-static@latest/icons/clock.svg" alt="Clock Icon" style="width: 24px; height: 24px;">
+            <span id="timer"></span>
+        </div>
+        <button id="start-button">Bắt đầu</button>
+        <div id="score-display">Điểm: 0</div>
+        <div class="game-over-overlay" style="display: none;">
+            <div class="game-over-content">
+                <p>Game Over!</p>
+                <p><span id="final-score">0</span></p>
+                <button class="play-again-button">Chơi lại</button>
+            </div>
+        </div>
+    </div>
+    <script>
+        const allWords = [
+            "anh", "em", "cây", "lá", "hoa", "quả", "bàn", "ghế", "sách", "vở",
+            "mưa", "nắng", "gió", "trăng", "sao", "biển", "núi", "sông", "nhà", "cửa",
+            "ăn", "uống", "ngủ", "chơi", "học", "hát", "múa", "đi", "đứng", "ngồi",
+            "mẹ", "cha", "ông", "bà", "anh trai", "chị gái", "em trai", "em gái",
+            "bạn", "thầy", "cô", "bác", "chú", "dì", "tên", "tuổi", "năm", "tháng",
+            "ngày", "giờ", "phút", "giây", "màu", "vàng", "đỏ", "xanh", "trắng",
+            "đen", "to", "nhỏ", "cao", "thấp", "béo", "gầy", "đẹp", "xấu", "ngoan",
+            "hư", "vui", "buồn", "khóc", "cười", "nói", "nghe", "nhìn", "chạm",
+            "cầm", "nắm", "buông", "tha", "điện", "thoại", "máy tính", "ti vi",
+            "xe máy", "ô tô", "tàu hỏa", "máy bay", "bút", "mực", "giấy", "kéo",
+            "thước", "tẩy", "gôm", "bảng", "phấn", "cặp", "sách giáo khoa",
+            "truyện", "thơ", "bài hát", "bài tập", "trò chơi", "thể thao", "bóng đá",
+            "bóng rổ", "bơi lội", "chạy bộ", "nhảy dây", "đá cầu", "cầu lông",
+            "thời tiết", "nhiệt độ", "mặt trời", "mặt trăng", "ngôi sao", "bầu trời",
+            "trái đất", "hệ mặt trời", "vũ trụ", "thiên hà", "ngân hà", "hành tinh",
+            "con vật", "gà", "vịt", "chó", "mèo", "bò", "trâu", "lợn", "ngựa",
+            "voi", "khỉ", "sư tử", "hổ", "gấu", "cá", "chim", "bướm", "ong",
+            "kiến", "muỗi", "ruồi", "gián", "chuột", "thỏ", "sóc", "nai", "hươu",
+            "cây cối", "hoa hồng", "hoa cúc", "hoa lan", "cây tre", "cây dừa",
+            "cây phượng", "cây bàng", "cây đa", "rừng", "biển cả", "đồng ruộng",
+            "con người", "tay", "chân", "đầu", "mình", "mắt", "mũi", "miệng",
+            "tai", "tóc", "răng", "lưỡi", "cổ", "vai", "lưng", "bụng", "tim",
+            "máu", "xương", "da", "thịt", "óc", "gan", "phổi", "dạ dày", "ruột",
+            "bàn tay", "ngón tay", "bàn chân", "ngón chân", "khuỷu tay", "đầu gối",
+            "mặt", "trán", "má", "cằm", "lông mày", "lông mi", "cổ họng", "ngực",
+            "rốn", "hông", "mông", "đùi", "cẳng chân", "bàn tay", "bàn chân",
+            "ngón tay", "ngón chân", "móng tay", "móng chân", "tóc tai", "mồ hôi",
+            "nước mắt", "nước mũi", "nước bọt", "máu me", "mủ máu", "vết thương",
+            "sẹo", "mụn", "nhọt", "ghẻ", "lác", "lang ben", "hắc lào", "nấm",
+            "viêm", "đau", "nhức", "mỏi", "rát", "ngứa", "tê", "buốt", "nhức đầu",
+            "đau bụng", "đau răng", "đau họng", "sốt", "ho", "cảm", "cúm", "sởi",
+            "quai bị", "thủy đậu", "tiêu chảy", "táo bón", "đau mắt", "đau tai",
+            "đau chân", "đau tay", "đau lưng", "đau vai", "đau ngực", "khó thở",
+            "chóng mặt", "buồn nôn", "nôn mửa", "tiêu hóa", "hô hấp", "tuần hoàn",
+            "thần kinh", "cơ bắp", "xương khớp", "da liễu", "tai mũi họng",
+            "răng hàm mặt", "sản khoa", "nhi khoa", "lão khoa", "ung bướu",
+            "tim mạch", "nội tiết", "tiết niệu", "sinh dục", "truyền nhiễm",
+            "dinh dưỡng", "vận động", "tâm lý", "xã hội", "văn hóa", "giáo dục",
+            "kinh tế", "chính trị", "pháp luật", "quân sự", "ngoại giao", "thể thao",
+            "nghệ thuật", "âm nhạc", "hội họa", "điện ảnh", "sân khấu", "văn học",
+            "báo chí", "truyền hình", "phát thanh", "internet", "mạng xã hội",
+            "công nghệ", "khoa học", "tự nhiên", "xã hội", "lịch sử", "địa lý",
+            "toán học", "vật lý", "hóa học", "sinh học", "tin học", "ngôn ngữ",
+            "văn học", "lịch sử", "địa lý", "giáo dục công dân", "âm nhạc",
+            "mỹ thuật", "thể dục", "công nghệ", "tin học", "ngoại ngữ", "tự nhiên xã hội",
+            "bò", "gà", "bê", "dê", "nở", "mở", "đỏ", "bé", "mẹ", "bố",
+            "cửa", "nhà", "bàn", "ghế", "mèo", "chó", "gió", "mưa", "hoa", "cây",
+            "bếp", "sân", "đèn", "cốc", "nồi", "xôi", "bánh", "cơm", "phở", "bún",
+            "bánh", "cháo", "thịt", "rượu", "nước", "trời", "mây", "biển", "sông", "suối",
+            "chim", "chuột", "rồng", "phụng", "trăng", "sách", "viết", "bảng", "phấn", "giấy",
+            "tuyết", "sương", "nắng", "thuyền", "chuông", "trống", "chiếu", "chăn", "gương", "khăn",
+            "xe đạp", "bàn ăn", "nhà tắm", "cửa sổ", "đèn ngủ", "bếp gas", "tủ đồ", "ghế đá",
+            "cây cỏ", "hoa lá", "chim muông", "cá tôm", "mưa gió", "nắng mưa", "trăng sao",
+            "bút chì", "học trò", "thầy cô", "cha mẹ", "anh chị", "bạn bè", "yêu thương",
+            "trường học", "bệnh viện", "công viên", "siêu thị", "nhà hàng", "sân bay",
+            "ga tàu", "bến xe", "chợ đêm", "phố xá", "đường phố", "biển cả",
+            "núi non", "sông ngòi", "đồng ruộng", "làng quê", "thành phố", "quê hương",
+            "nhà văn hóa", "khu công nghiệp", "bảo tàng lịch sử", "thư viện quốc gia",
+            "công viên nước", "khu vui chơi", "trung tâm thương mại", "bến xe khách",
+            "phở bò", "bún chả", "cơm tấm", "bánh mì", "chả giò", "gỏi cuốn",
+            "canh chua", "cá kho", "thịt kho", "rau muống", "rau cải", "củ cải",
+            "mặt trăng", "bầu trời", "đại dương", "núi đồi", "thác nước", "hang động",
+            "rừng già", "sa mạc", "đồng cỏ", "bãi biển", "đảo xa", "vịnh biển",
+            "điện thoại", "máy tính", "tivi", "tủ lạnh", "máy giặt", "nồi cơm",
+            "bàn phím", "chuột máy", "màn hình", "loa đài", "đèn pin", "quạt máy",
+            "đi bộ", "chạy nhảy", "bơi lội", "ca hát", "nhảy múa", "vẽ tranh",
+            "đọc sách", "viết chữ", "nấu ăn", "làm vườn", "tập thể", "học bài",
+            "vui vẻ", "buồn bã", "hạnh phúc", "đau khổ", "lo lắng", "hy vọng",
+            "yêu thương", "nhớ nhung", "giận dữ", "sợ hãi", "tự hào", "xấu hổ",
+            "sáng sớm", "trưa nắng", "chiều tà", "đêm khuya", "mùa xuân", "mùa hạ",
+            "mùa thu", "mùa đông", "năm mới", "tháng giêng", "ngày tết", "giờ đây",
+            "xanh lá", "xanh dương", "đỏ tươi", "vàng óng", "tím than", "hồng phấn",
+            "nâu đất", "đen tuyền", "trắng tinh", "xám khói", "bạc ánh", "cam đào"
+        ];
+
+        let currentWordSet = [];
+        let selectedWord = "";
+        let shuffledLetters = [];
+        let selectedLetters = [];
+        let score = 0;
+        let gameStarted = false;
+        let currentLetterIndex = 0;
+        let wordsPlayed = [];
+        let timeLeft = 0;
+        let timerId;
+        let currentWordIndex = 0;
+        let currentSetIndex = 0;
+
+        // DOM Elements
+        const gameContainer = document.getElementById("game-container");
+        const wordDisplay = document.getElementById("word-display");
+        const lettersContainer = document.getElementById("letters-container");
+        const messageElement = document.getElementById("message");
+        const startButton = document.getElementById("start-button");
+        const scoreDisplay = document.getElementById("score-display");
+        const body = document.body;
+        const gameOverOverlay = document.querySelector(".game-over-overlay");
+        const finalScoreDisplay = document.getElementById("final-score");
+        const playAgainButton = document.querySelector(".play-again-button");
+        const timerDisplayElement = document.getElementById("timer-display");
+
+        // Phân loại từ theo yêu cầu
+        const wordCategories = {
+            twoLetters: [], // 3 từ đơn 2 chữ cái
+            threeLetters: [], // 3 từ đơn 3 chữ cái
+            fourLetters: [], // 3 từ đơn 4 chữ cái
+            fiveLetters: [], // 3 từ đơn 5 chữ cái
+            shortCompound: [], // 3 từ ghép 2 từ ngắn
+            longCompound: [], // 3 từ ghép 2 từ dài
+            threeWords: [] // 2 từ ghép 3 từ
+        };
+
+        // Phân loại từ từ allWords
+        function categorizeWords() {
+            allWords.forEach(word => {
+                const parts = word.split(' ');
+                const length = word.replace(/ /g, '').length;
+                
+                if (parts.length === 1) { // Từ đơn
+                    if (length === 2) wordCategories.twoLetters.push(word);
+                    else if (length === 3) wordCategories.threeLetters.push(word);
+                    else if (length === 4) wordCategories.fourLetters.push(word);
+                    else if (length === 5) wordCategories.fiveLetters.push(word);
+                } else if (parts.length === 2) { // Từ ghép 2 từ
+                    const isLong = parts.some(part => part.length > 4);
+                    if (isLong) wordCategories.longCompound.push(word);
+                    else wordCategories.shortCompound.push(word);
+                } else if (parts.length === 3) { // Từ ghép 3 từ
+                    wordCategories.threeWords.push(word);
+                }
+            });
+        }
+
+        // Chọn ngẫu nhiên từ một mảng
+        function getRandomWords(array, count) {
+            // Đảm bảo không lấy từ đã được chọn trước đó
+            const availableWords = array.filter(word => !wordsPlayed.includes(word));
+            const shuffled = [...availableWords].sort(() => 0.5 - Math.random());
+            return shuffled.slice(0, Math.min(count, shuffled.length));
+        }
+
+        // Tạo danh sách từ cho một lượt chơi
+        function createGameWordList() {
+            const gameWords = [];
+            
+            // Định nghĩa thứ tự và số lượng từ cho mỗi danh mục
+            const categories = [
+                { array: wordCategories.twoLetters, count: 3 },
+                { array: wordCategories.threeLetters, count: 3 },
+                { array: wordCategories.fourLetters, count: 3 },
+                { array: wordCategories.fiveLetters, count: 3 },
+                { array: wordCategories.shortCompound, count: 3 },
+                { array: wordCategories.longCompound, count: 3 },
+                { array: wordCategories.threeWords, count: 2 }
+            ];
+
+            // Lấy từ từ mỗi danh mục theo đúng thứ tự
+            for (const category of categories) {
+                const words = getRandomWords(category.array, category.count);
+                gameWords.push(...words);
+            }
+
+            // KHÔNG trộn ngẫu nhiên nữa, giữ nguyên thứ tự từ dễ đến khó
+            return gameWords;
+        }
+
+        function selectWordSet() {
+            if (wordsPlayed.length >= 20) {
+                gameOver(true);
+                return null;
+            }
+            
+            // Tạo bộ từ mới nếu chưa có hoặc đã hết từ trong bộ hiện tại
+            if (wordsPlayed.length === 0 || currentWordIndex >= currentWordSet.length) {
+                currentWordSet = createGameWordList();
+                currentWordIndex = 0;
+            }
+            
+            // Luôn trả về currentWordSet
+            return currentWordSet;
+        }
+
+        function selectWord() {
+            // Đảm bảo có currentWordSet trước khi chọn từ
+            if (!currentWordSet || currentWordSet.length === 0) {
+                return "";
+            }
+            
+            let word = "";
+            if (currentWordIndex < currentWordSet.length) {
+                word = currentWordSet[currentWordIndex];
+                // Cập nhật currentSetIndex dựa vào vị trí từ
+                if (currentWordIndex >= 18) { // Đối với 2 từ ghép 3 từ cuối cùng
+                    currentSetIndex = 6;
+                } else {
+                    currentSetIndex = Math.floor(currentWordIndex / 3);
+                }
+            }
+            selectedWord = word;
+            return selectedWord;
+        }
+
+        function shuffleLetters(word) {
+            const letters = word.replace(/ /g, '').split('');
+            const numFakeLetters = Math.min(3, Math.floor(letters.length / 2));
+            const fakeLetters = [];
+            const alphabet = "abcdefghijklmnopqrstuvwxyz";
+            for (let i = 0; i < numFakeLetters; i++) {
+                let randomLetter;
+                do {
+                    randomLetter = alphabet[Math.floor(Math.random() * alphabet.length)];
+                } while (letters.includes(randomLetter) || fakeLetters.includes(randomLetter));
+                fakeLetters.push(randomLetter);
+            }
+            const combinedLetters = [...letters, ...fakeLetters];
+             for (let i = combinedLetters.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [combinedLetters[i], combinedLetters[j]] = [combinedLetters[j], combinedLetters[i]];
+            }
+            return combinedLetters;
+        }
+
+        function displayWord() {
+            // Kiểm tra xem có từ được chọn không
+            if (!selectedWord) {
+                console.error("Không có từ được chọn");
+                return;
+            }
+            
+            lettersContainer.innerHTML = "";
+            wordDisplay.innerHTML = "";
+            
+            // Hiển thị từ ban đầu
+            wordDisplay.textContent = selectedWord;
+            wordDisplay.style.display = "block";
+            
+            setTimeout(() => {
+                wordDisplay.innerHTML = "";
+                const words = selectedWord.split(' ');
+                
+                // Tạo container cho mỗi từ và khoảng cách giữa chúng
+                words.forEach((word, wordIndex) => {
+                    // Container cho mỗi từ
+                    const wordContainer = document.createElement('div');
+                    wordContainer.style.display = 'flex';
+                    wordContainer.style.gap = '8px';
+                    
+                    // Tạo ô trống cho từng chữ cái trong từ
+                    word.split('').forEach((letter, letterIndex) => {
+                        const blank = document.createElement('div');
+                        blank.classList.add('letter-blank');
+                        blank.dataset.index = wordIndex === 0 ? 
+                            letterIndex : 
+                            words.slice(0, wordIndex).join('').length + letterIndex;
+                        wordContainer.appendChild(blank);
+                    });
+                    
+                    wordDisplay.appendChild(wordContainer);
+                    
+                    // Thêm khoảng cách giữa các từ (nếu không phải từ cuối)
+                    if (wordIndex < words.length - 1) {
+                        const spacer = document.createElement('div');
+                        spacer.style.width = '20px'; // Khoảng cách giữa các từ
+                        wordDisplay.appendChild(spacer);
+                    }
+                });
+                
+                wordDisplay.style.display = "flex";
+                wordDisplay.style.alignItems = "center";
+                wordDisplay.style.gap = "10px";
+                displayShuffledLetters();
+            }, 2000);
+        }
+
+        function displayShuffledLetters() {
+            lettersContainer.innerHTML = "";
+            shuffledLetters = shuffleLetters(selectedWord);
+            shuffledLetters.forEach(letter => {
+                const letterElement = document.createElement("div");
+                letterElement.classList.add("letter");
+                letterElement.textContent = letter;
+                letterElement.addEventListener("click", () => handleLetterClick(letterElement));
+                lettersContainer.appendChild(letterElement);
+            });
+            currentLetterIndex = 0;
+            selectedLetters = [];
+            if (timerId) {
+                clearInterval(timerId);
+            }
+            timeLeft = selectedWord.length * 3 + (currentSetIndex * 2);
+            timerDisplayElement.textContent = `Thời gian: ${timeLeft}`;
+            timerDisplayElement.style.display = "flex";
+            startTimer();
+        }
+
+        function handleLetterClick(clickedLetterElement) {
+            if (!gameStarted) return;
+            const clickedLetter = clickedLetterElement.textContent;
+            const wordWithoutSpaces = selectedWord.replace(/ /g, '');
+            
+            if (clickedLetter === wordWithoutSpaces[currentLetterIndex]) {
+                // Tìm ô trống đích dựa trên data-index
+                const targetBlank = document.querySelector(`.letter-blank[data-index="${currentLetterIndex}"]`);
+                if (!targetBlank) return;
+                
+                const targetRect = targetBlank.getBoundingClientRect();
+                const letterRect = clickedLetterElement.getBoundingClientRect();
+                
+                // Tính toán khoảng cách để bay
+                const tx = targetRect.left - letterRect.left;
+                const ty = targetRect.top - letterRect.top;
+                
+                // Tạo bản sao của chữ cái để bay
+                const flyingLetter = clickedLetterElement.cloneNode(true);
+                flyingLetter.classList.add('flying');
+                flyingLetter.style.setProperty('--tx', `${tx}px`);
+                flyingLetter.style.setProperty('--ty', `${ty}px`);
+                document.body.appendChild(flyingLetter);
+                
+                // Ẩn chữ cái đã chọn và cập nhật ô trống
+                clickedLetterElement.style.opacity = '0';
+                clickedLetterElement.style.pointerEvents = 'none';
+                targetBlank.textContent = clickedLetter;
+                targetBlank.classList.add('filled');
+                
+                // Xóa chữ cái bay sau khi hoàn thành animation
+                setTimeout(() => {
+                    flyingLetter.remove();
+                }, 500);
+                
+                selectedLetters.push(clickedLetter);
+                currentLetterIndex++;
+                
+                if (selectedLetters.join('') === wordWithoutSpaces) {
+                    clearInterval(timerId);
+                    hideTimer();
+                    
+                    messageElement.style.display = "block";
+                    let wordScore = timeLeft * 100;
+                    score += wordScore;
+                    scoreDisplay.textContent = `Điểm: ${score}`;
+                    const audio = new Audio("cheer.mp3");
+                    audio.play();
+                    
+                    setTimeout(() => {
+                        messageElement.style.display = "none";
+                        currentWordIndex++;
+                        wordsPlayed.push(selectedWord);
+                        
+                        if (wordsPlayed.length >= 20) {
+                            gameOver(true);
+                            return;
+                        }
+                        
+                        selectWordSet();
+                        selectWord();
+                        displayWord();
+                    }, 1000);
+                }
+            } else {
+                gameOver();
+            }
+        }
+
+        function startGame() {
+            gameStarted = true;
+            startButton.style.display = "none";
+            gameContainer.classList.remove('start-screen');
+            gameContainer.classList.add('playing-screen');
+            body.classList.remove('start-screen');
+            body.classList.add('playing-screen');
+            score = 0;
+            wordsPlayed = [];
+            selectedLetters = [];
+            currentLetterIndex = 0;
+            lettersContainer.innerHTML = "";
+            currentWordIndex = 0;
+            currentSetIndex = 0;
+            
+            // Phân loại từ trước khi bắt đầu game
+            wordCategories.twoLetters = [];
+            wordCategories.threeLetters = [];
+            wordCategories.fourLetters = [];
+            wordCategories.fiveLetters = [];
+            wordCategories.shortCompound = [];
+            wordCategories.longCompound = [];
+            wordCategories.threeWords = [];
+            categorizeWords();
+            
+            selectWordSet();
+            selectWord();
+            displayWord();
+            scoreDisplay.textContent = `Điểm: ${score}`;
+            gameOverOverlay.style.display = "none";
+            hideTimer();
+        }
+
+        function gameOver(maxPoint = false) {
+            gameStarted = false;
+            clearInterval(timerId);
+            hideTimer();
+            
+            if (maxPoint) {
+                finalScoreDisplay.textContent = `Chúc mừng! Bạn đã hoàn thành trò chơi với ${score} điểm!`;
+            } else {
+                finalScoreDisplay.textContent = `Điểm của bạn: ${score}`;
+            }
+            
+            gameOverOverlay.style.display = "flex";
+            body.classList.remove('playing-screen');
+            body.classList.add('game-over-screen');
+            gameContainer.classList.remove('playing-screen');
+            gameContainer.classList.add('game-over-screen');
+        }
+
+        function startTimer() {
+            clearInterval(timerId);
+            // Điều chỉnh thời gian dựa vào độ khó của từ
+            const baseTime = selectedWord.length * 3;
+            const bonusTime = currentSetIndex * 2; // Thêm thời gian cho các từ khó hơn
+            timeLeft = baseTime + bonusTime;
+            
+            timerDisplayElement.textContent = `Thời gian: ${timeLeft}`;
+            timerDisplayElement.style.display = "block";
+            timerId = setInterval(() => {
+                timeLeft--;
+                timerDisplayElement.textContent = `Thời gian: ${timeLeft}`;
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    hideTimer();
+                    gameOver();
+                }
+            }, 1000);
+        }
+
+        function hideTimer() {
+            timerDisplayElement.style.display = "none";
+            clearInterval(timerId);
+        }
+
+        playAgainButton.addEventListener("click", () => {
+            score = 0;
+            scoreDisplay.textContent = `Điểm: ${score}`;
+            startGame();
+        });
+        startButton.addEventListener("click", startGame);
+    </script>
+</body>
+</html>

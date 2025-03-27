@@ -238,7 +238,7 @@ function calculateDisplayTime(text) {
     const charCount = text.replace(/\s/g, '').length;
     
     // Thời gian cơ bản cho mỗi từ
-    const baseTimePerWord = 1800; // 1.8 giây cho mỗi từ
+    const baseTimePerWord = 1500; // 1.8 giây cho mỗi từ
     
     // Thời gian cơ bản cho mỗi ký tự
     const baseTimePerChar = 300; // 0.3 giây cho mỗi ký tự

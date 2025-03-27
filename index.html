@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ghép Chữ Đúng</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="styles.css">
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.5.1/dist/confetti.browser.min.js"></script>
+</head>
+<body class="start-screen">
+    <div id="game-container" class="start-screen">
+        <h1>Ghép Chữ Đúng</h1>
+        <div id="game-phase">Phần 1: Ghép từ</div>
+        <div id="word-display">
+            <div id="word-image-container"></div>
+            <div id="word-blanks"></div>
+        </div>
+        <div id="letters-container"></div>
+        <div id="message">Giỏi lắm!</div>
+        <div id="timer-display">
+            <img src="https://unpkg.com/lucide-static@latest/icons/clock.svg" alt="Clock Icon" style="width: 24px; height: 24px;">
+            <span id="timer"></span>
+        </div>
+        <button id="start-button">Bắt đầu</button>
+        <div id="score-display">Điểm: 0</div>
+        <div class="game-over-overlay" style="display: none;">
+            <div class="game-over-content">
+                <p id="game-over-title">Game Over!</p>
+                <p><span id="final-score">0</span></p>
+                <button class="play-again-button">Chơi lại</button>
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html>
